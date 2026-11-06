@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>易錯字特訓班 - 魔鬼訓練營 (A-F 成語完整版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Serif TC', serif;
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            margin: 0;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+        }
+        .target-char {
+            color: #1e3a8a; /* Tailwind indigo-900 */
+            font-weight: 900;
+            border-bottom: 4px solid #6366f1; /* Tailwind indigo-500 */
+            padding-bottom: 2px;
+            margin: 0 4px;
+            display: inline-block;
+        }
+        .btn-hover-effect {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-hover-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+        }
+        .btn-hover-effect:active {
+            transform: scale(0.96);
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 md:p-8">
+
+    <div id="app" class="glass-card w-full max-w-2xl rounded-3xl p-6 md:p-12 flex flex-col items-center relative overflow-hidden fade-in">
+        
+        <!-- 頂部標題與進度列 -->
+        <div class="w-full flex justify-between items-center mb-8 border-b border-indigo-200/80 pb-4 text-slate-700">
+            <h1 class="text-xl md:text-2xl font-black tracking-widest text-indigo-950">
+                ✍️ 易錯字特訓班 (A-F)
+            </h1>
+            <div class="text-sm font-bold bg-white/80 border border-indigo-100 px-4 py-2 rounded-full shadow-sm">
+                剩餘題數: <span id="progress-text" class="text-indigo-600 font-black text-lg ml-1">0</span>
+            </div>
+        </div>
+
+        <!-- 題目顯示區 -->
+        <div id="question-area" class="w-full flex flex-col items-center mb-8 fade-in min-h-[200px] justify-center">
+            <p class="text-indigo-800/80 mb-4 text-sm md:text-base font-bold tracking-widest">
+                請判斷以下成語中底線標記的字是否書寫正確：
+            </p>
+            <div id="word-display" class="text-5xl md:text-6xl font-black tracking-widest py-8 text-slate-800 text-center leading-relaxed select-none">
+                <!-- 成語將透過安全 DOM 節點注入 -->
+            </div>
+        </div>
+
+        <!-- 答題互動按鈕 -->
+        <div id="action-buttons" class="w-full flex gap-4 md:gap-8 justify-center fade-in">
+            <button onclick="checkAnswer(true)" class="btn-hover-effect flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg text-xl border-2 border-emerald-400 cursor-pointer tracking-wider">
+                ✅ 完全正確
+            </button>
+            <button onclick="checkAnswer(false)" class="btn-hover-effect flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-4 rounded-2xl shadow-lg text-xl border-2 border-rose-400 cursor-pointer tracking-wider">
+                ❌ 有錯別字
+            </button>
+        </div>
+
+        <!-- 解析回饋區 (預設隱藏) -->
+        <div id="feedback-area" class="w-full hidden flex-col items-center mt-6 p-6 rounded-2xl shadow-inner fade-in">
+            <h2 id="feedback-title" class="text-2xl md:text-3xl font-black mb-3 tracking-wider"></h2>
+            <p id="feedback-explanation" class="text-slate-700 text-lg text-center mb-6 leading-relaxed"></p>
+            <button onclick="nextQuestion()" class="btn-hover-effect bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-12 rounded-xl shadow-md text-lg tracking-widest cursor-pointer">
+                下一題 ➔
+            </button>
+        </div>
+
+        <!-- 本輪結算與錯題循環區 (預設隱藏) -->
+        <div id="result-area" class="w-full hidden flex-col items-center py-8 fade-in text-center">
+            <div id="result-icon" class="text-7xl mb-5 drop-shadow-sm">🏆</div>
+            <h2 id="result-title" class="text-3xl md:text-4xl font-black text-indigo-950 mb-4 tracking-wider">
+                本輪特訓結束！
+            </h2>
+            <p id="result-desc" class="text-lg md:text-xl text-slate-700 mb-8 leading-relaxed font-medium"></p>
+            <button id="result-btn" onclick="startNextRound()" class="btn-hover-effect bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-12 rounded-2xl shadow-lg text-xl tracking-widest cursor-pointer">
+                繼續特訓
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // 完整核對之 A-F 成語錯別字題庫 (共 114 組，一字不漏)
+        // 格式：[成語模板(用_代替考點字), 正確字, [2至3個常見錯字陣列], 詳細解析]
+        const rawData = [
+            // --- A (4組) ---
+            ["_聲嘆氣", "唉", ["哀", "哎", "埃"], "「唉」是嘆詞；「哀」指悲傷。應為嘆詞「唉聲嘆氣」。"],
+            ["和_可親", "藹", ["靄", "愛"], "「藹」意為和氣；「靄」指雲氣（如暮靄）。"],
+            ["方興未_", "艾", ["愛", "礙"], "「艾」意為停止，方興未艾指事物正在蓬勃發展，尚未停止。"],
+            ["_然銷魂", "黯", ["暗", "諳"], "「黯」指心神沮喪、面色難看。"],
+
+            // --- B (31組) ---
+            ["飛揚_扈", "跋", ["拔", "鈸"], "「跋扈」指專橫暴戾，不可誤寫為「拔」。"],
+            ["縱橫_闔", "捭", ["擺", "牌", "稗"], "「捭」指撥開，「闔」指閉攏。"],
+            ["_官野史", "稗", ["碑", "牌", "俾"], "「稗」指稗草，引申為微小的、非正統的記載。"],
+            ["甘_下風", "拜", ["敗", "掰"], "「拜」指屈服、認輸，非「敗」。"],
+            ["_門弄斧", "班", ["搬", "般"], "「班」指古代巧匠魯班。"],
+            ["略見一_", "斑", ["班", "般"], "「斑」指豹子身上的斑紋，比喻事物的一小部分。"],
+            ["如丸走_", "坂", ["板", "版", "返"], "「坂」指斜坡、山坡，形容局勢發展迅速順暢。"],
+            ["無_於事", "裨", ["卑", "脾", "稗"], "「裨」指益處、補助。"],
+            ["永_青春", "葆", ["保", "寶"], "「葆」有保持、珍藏之意，固定寫法為「永葆青春」。"],
+            ["投桃_李", "報", ["抱", "暴"], "「報」指回報、答謝。"],
+            ["以德_怨", "報", ["抱", "暴"], "「報」指回報，用恩德回報怨恨。"],
+            ["自_自棄", "暴", ["抱", "報"], "「暴」指糟蹋、損害自己。"],
+            ["_受歡迎", "備", ["倍", "被"], "「備」意為完全、周全、非常。"],
+            ["關懷_至", "備", ["倍", "被"], "「備」意為完全、周到。"],
+            ["艱苦_嘗", "備", ["倍", "被"], "「備」意為盡、全，指受盡艱苦。"],
+            ["英雄_出", "輩", ["倍", "備"], "「輩」指批、類，一代代相繼出現。"],
+            ["並行不_", "悖", ["背", "備"], "「悖」指違背、相衝突。"],
+            ["民生凋_", "敝", ["弊", "蔽"], "「敝」指破敗、困苦。"],
+            ["遮天_日", "蔽", ["避", "敝", "弊"], "「蔽」指遮蓋、擋住。"],
+            ["原物_還", "璧", ["壁", "碧"], "「璧」指美玉，源於「完璧歸趙」，敬稱歸還元物。"],
+            ["珠聯_合", "璧", ["壁", "碧"], "「璧」指美玉，珍珠串聯、美玉合攏。"],
+            ["金_輝煌", "碧", ["璧", "壁"], "「碧」指青綠色，形容建築物色彩華麗。"],
+            ["剛_自用", "愎", ["腹", "復", "覆"], "「愎」指固執、任性（豎心旁）。"],
+            ["明_是非", "辨", ["辯", "辮", "瓣"], "「辨」指分辨、看清；「辯」指用言語爭論。"],
+            ["分道揚_", "鑣", ["鏢", "膘", "飆"], "「鑣」指馬嚼子，比喻志趣不同而各走各的路。"],
+            ["彪_千秋", "炳", ["秉", "柄"], "「炳」指顯著、光明（火字旁），形容業績偉大。"],
+            ["天賦異_", "稟", ["秉", "炳"], "「稟」指承受、天生的資質。"],
+            ["赤_上陣", "膊", ["搏", "博"], "「膊」指胳膊（月字旁）。"],
+            ["淡_名利", "泊", ["薄", "勃"], "「泊」指恬靜、無動於衷。"],
+            ["日_西山", "薄", ["泊", "箔"], "「薄」指迫近、靠近。"],
+            ["按_就班", "部", ["步", "布", "簿"], "「部」指門類，「班」指次序。"],
+
+            // --- C (37組) ---
+            ["_酷無情", "殘", ["慘", "慚"], "「殘」指凶狠冷酷。"],
+            ["_無人道", "慘", ["殘", "慚"], "「慘」指悲慘、狠毒。"],
+            ["_海桑田", "滄", ["蒼", "艙"], "「滄」指暗綠色的水（滄海）。"],
+            ["揚_而去", "長", ["常", "場"], "「揚長」指大模大樣地離開。"],
+            ["_年累月", "長", ["常", "場"], "「長年」指長時期，形容歷時很久。"],
+            ["四季_青", "常", ["長", "場"], "「常」指經常、恆久不變。"],
+            ["得不_失", "償", ["嘗", "常"], "「償」指抵補、補償。"],
+            ["愁_百結", "腸", ["嘗", "常"], "「腸」指心思、愁腸。"],
+            ["淒婉惘_", "悵", ["帳", "脹"], "「悵」指失意、惆悵（豎心旁）。"],
+            ["天崩地_", "坼", ["拆", "折"], "「坼」指裂開（土字旁，無點）。"],
+            ["_目而視", "瞋", ["嗔", "慎", "瞠"], "「瞋」指發怒時睜大眼睛（目字旁）。"],
+            ["相輔相_", "成", ["承", "程"], "「成」指促成、成就。"],
+            ["墨守_規", "成", ["陳", "程"], "「成規」指現成的老規矩。"],
+            ["計日_功", "程", ["成", "乘"], "「程」指進程、衡量，計算日子驗收成效。"],
+            ["開_布公", "誠", ["城", "承"], "「誠」指誠心誠意。"],
+            ["眾志成_", "城", ["誠", "成"], "「城」指城牆，比喻團結一致力量堅不可摧。"],
+            ["_之以鼻", "嗤", ["痴", "恥"], "「嗤」指譏笑（口字旁）。"],
+            ["風_電掣", "馳", ["弛", "遲"], "「馳」指車馬快跑。"],
+            ["一張一_", "弛", ["馳", "池"], "「弛」指放鬆弓弦，與「張」（拉緊）相對。"],
+            ["憂心_", "忡忡", ["沖沖", "充充"], "「忡忡」形容心事重重、憂愁不安（豎心旁）。"],
+            ["報_雪恨", "仇", ["愁", "酬"], "「仇」指仇恨。"],
+            ["一_莫展", "籌", ["愁", "稠"], "「籌」指計策、辦法。"],
+            ["運_帷幄", "籌", ["愁", "稠"], "「籌」指計謀、籌劃。"],
+            ["_強扶弱", "鋤", ["除", "廚"], "「鋤」指剷除（金字旁）。"],
+            ["相形見_", "絀", ["拙", "出", "黜"], "「絀」指不足、不夠（糸字旁）。"],
+            ["_流不息", "川", ["穿", "傳"], "「川」指河流，像河水一樣流個不停。"],
+            ["如_之筆", "椽", ["緣", "傳"], "「椽」指支撐屋頂的木條（木字旁），形容筆力雄健。"],
+            ["剜肉補_", "瘡", ["倉", "創"], "「瘡」指皮膚潰瘍、傷口。"],
+            ["_穿陰謀", "戳", ["截", "戮"], "「戳」指刺破、揭穿。"],
+            ["氣息_然", "惙", ["綴", "輟", "啜"], "「惙」意為憂愁、氣息微弱（豎心旁）。"],
+            ["吹毛求_", "疵", ["痴", "刺"], "「疵」指小毛病、缺點（病字頭）。"],
+            ["義不容_", "辭", ["詞", "遲"], "「辭」指推辭、推卸。"],
+            ["理屈_窮", "詞", ["辭", "遲"], "「詞」指言詞、話語。"],
+            ["_不及防", "猝", ["碎", "粹", "淬"], "「猝」指突然、出乎意料（犬字旁）。"],
+            ["竊國_權", "篡", ["竄", "纂", "撰"], "「篡」指非法奪取權位（竹字頭，下為算省）。"],
+            ["出類拔_", "萃", ["粹", "碎", "翠"], "「萃」指草叢生，引申為聚集的人或物。"],
+            ["鞠躬盡_", "瘁", ["粹", "碎", "萃"], "「瘁」指過度勞累（病字頭）。"],
+
+            // --- D (22組) ---
+            ["以逸_勞", "待", ["代", "殆", "帶"], "「待」指等待、對付。"],
+            ["責無旁_", "貸", ["代", "待"], "「貸」指推卸、寬恕。"],
+            ["春風_蕩", "駘", ["殆", "怡", "抬"], "「駘蕩」形容春風舒緩蕩漾（馬字旁）。"],
+            ["_罪立功", "戴", ["代", "帶", "待"], "「戴」指承受、頂著（攜帶罪名立功贖罪）。"],
+            ["_精竭慮", "殫", ["彈", "憚", "單"], "「殫」意為竭盡（歹字旁）。"],
+            ["_食瓢飲", "簞", ["單", "殫", "擔"], "「簞」是古代盛飯的圓形竹器（竹字頭）。"],
+            ["虎視_", "眈眈", ["耽耽", "沈沈"], "「眈眈」指凶狠注視的樣子（目字旁）。"],
+            ["稍事_擱", "耽", ["眈", "擔"], "「耽」指遲延、拖延（耳字旁）。"],
+            ["獨_一面", "當", ["擋", "擔"], "「當」指承擔、主持。"],
+            ["投機_把", "倒", ["搗", "導"], "「倒」指轉手買賣以牟利。"],
+            ["中流_柱", "砥", ["抵", "底"], "「砥」指磨刀石（石字旁），中流砥柱指黃河中的砥柱山。"],
+            ["_污清白", "玷", ["沾", "點", "砧"], "「玷」指白玉上的斑點（王/玉字旁），引申為使有污點。"],
+            ["提心_膽", "吊", ["掉", "釣"], "「吊」指懸掛，形容心神不寧。"],
+            ["_以輕心", "掉", ["吊", "調"], "「掉」意為搖擺、對待，對事情採取輕率的態度。"],
+            ["尾大不_", "掉", ["吊", "調"], "「掉」指搖動、擺動，尾巴太大搖動不了。"],
+            ["層巒_嶂", "疊", ["迭", "碟"], "「疊」指重疊。"],
+            ["大名_", "鼎鼎", ["頂頂", "叮叮"], "「鼎鼎」形容名氣很大、盛大的樣子。"],
+            ["疑_叢生", "竇", ["瀆", "讀"], "「竇」指孔穴，疑竇指可疑之處。"],
+            ["窮兵_武", "黷", ["瀆", "贖", "讀"], "「黷」指濫用（黑字旁）。"],
+            ["歡_春節", "度", ["渡", "鍍"], "「度」用於時間上的度過；「渡」用於空間上的過水。"],
+            ["橫_長江", "渡", ["度", "踱"], "「渡」指橫過水面（三點水）。"],
+            ["_逼人", "咄咄", ["拙拙", "茁茁"], "「咄咄」形容氣勢洶洶，使人驚懼（口字旁）。"],
+
+            // --- E (3組) ---
+            ["_冠博帶", "峨", ["娥", "鵝", "俄"], "「峨」指高（山字旁），峨冠指高帽子。"],
+            ["渾渾_", "噩噩", ["惡惡", "顎顎"], "「噩噩」形容渾然無知或愚昧無知的樣子。"],
+            ["卓_不群", "爾", ["而", "耳"], "「爾」為形容詞詞尾，卓爾指超乎尋常的樣子。"],
+
+            // --- F (17組) ---
+            ["_雲覆雨", "翻", ["番", "幡"], "「翻」指翻轉，形容人反覆無常或玩弄手段。"],
+            ["不同_響", "凡", ["反", "煩"], "「凡」指平凡、尋常。"],
+            ["卷帙浩_", "繁", ["煩", "凡"], "「繁」指眾多，形容書籍數量極多。"],
+            ["_復無常", "反", ["翻", "返"], "「反復」指顛過來倒過去、變動不定。"],
+            ["_聲中外", "蜚", ["緋", "斐", "菲"], "「蜚」通「飛」，蜚聲指揚名。"],
+            ["_發圖強", "奮", ["憤", "份"], "「奮」指振作精神、鼓起勁頭。"],
+            ["_發有為", "奮", ["憤", "份"], "「奮」指精神振作，有所作為。"],
+            ["血脈_張", "僨", ["憤", "噴", "賁"], "「僨」指亢奮、鼓起（單人旁）。"],
+            ["_神瀟灑", "風", ["豐", "封"], "「風神」指風度神采。"],
+            ["入不_出", "敷", ["夫", "膚", "付"], "「敷」指足夠、抵得上。"],
+            ["_員遼闊", "幅", ["福", "副"], "「幅」指寬度、廣度（巾字旁）。"],
+            ["破_沉舟", "釜", ["斧", "父"], "「釜」是古代的鍋，砸破鍋、弄沉船表示決一死戰。"],
+            ["瓦_雷鳴", "釜", ["斧", "父"], "「釜」指鍋，瓦鍋發出雷鳴般的聲音，比喻無才之人居高位。"],
+            ["肺_之言", "腑", ["府", "腐", "俯"], "「腑」指臟腑（月字旁），發自內心的真誠話語。"],
+            ["自_盈虧", "負", ["付", "富", "副"], "「負」指承擔、負責。"],
+            ["無以_加", "復", ["覆", "附", "負"], "「復」指再、又，不可能再增加，形容達到極點。"],
+            ["天翻地_", "覆", ["復", "腹", "赴"], "「覆」指翻轉、傾覆。"]
+        ];
+
+        let allQuestions = [];
+        let currentQuestionList = [];
+        let wrongQuestionsForNextRound = [];
+        let currentQuestion = null;
+
+        // 展開題庫：每組產生 1 道正確題 + N 道錯字題
+        function generateQuestions() {
+            let generated = [];
+            rawData.forEach(item => {
+                const [template, correctChar, wrongChars, explanation] = item;
+                const parts = template.split('_');
+                const prefix = parts[0] || '';
+                const suffix = parts[1] || '';
+
+                // 1 道正確寫法題
+                generated.push({
+                    prefix,
+                    suffix,
+                    target: correctChar,
+                    isCorrect: true,
+                    explanation,
+                    correctChar
+                });
+
+                // 2~3 道常見錯別字題
+                wrongChars.forEach(wrongChar => {
+                    generated.push({
+                        prefix,
+                        suffix,
+                        target: wrongChar,
+                        isCorrect: false,
+                        explanation,
+                        correctChar
+                    });
+                });
+            });
+            return generated;
+        }
+
+        // Fisher-Yates 隨機洗牌演算法
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // DOM 元素引用
+        const wordDisplay = document.getElementById('word-display');
+        const progressText = document.getElementById('progress-text');
+        const actionButtons = document.getElementById('action-buttons');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackExplanation = document.getElementById('feedback-explanation');
+        const questionArea = document.getElementById('question-area');
+        const resultArea = document.getElementById('result-area');
+        const resultTitle = document.getElementById('result-title');
+        const resultDesc = document.getElementById('result-desc');
+        const resultBtn = document.getElementById('result-btn');
+
+        // 初始化遊戲
+        function initGame() {
+            allQuestions = generateQuestions();
+            startNewRound(allQuestions);
+        }
+
+        // 開始新一輪特訓
+        function startNewRound(questions) {
+            currentQuestionList = shuffle(questions);
+            wrongQuestionsForNextRound = [];
+            
+            questionArea.classList.remove('hidden');
+            actionButtons.classList.remove('hidden');
+            feedbackArea.classList.add('hidden');
+            resultArea.classList.add('hidden');
+            
+            loadNextQuestion();
+        }
+
+        // 載入下一題（防劇透安全渲染）
+        function loadNextQuestion() {
+            if (currentQuestionList.length === 0) {
+                showRoundResult();
+                return;
+            }
+
+            currentQuestion = currentQuestionList.pop();
+            progressText.innerText = currentQuestionList.length + 1;
+            
+            // 清空並使用純文字節點與 span 元素渲染，確保正誤外觀 100% 一致
+            wordDisplay.innerHTML = '';
+            if (currentQuestion.prefix) {
+                wordDisplay.appendChild(document.createTextNode(currentQuestion.prefix));
+            }
+            
+            const targetSpan = document.createElement('span');
+            targetSpan.className = 'target-char';
+            targetSpan.innerText = currentQuestion.target;
+            wordDisplay.appendChild(targetSpan);
+            
+            if (currentQuestion.suffix) {
+                wordDisplay.appendChild(document.createTextNode(currentQuestion.suffix));
+            }
+
+            actionButtons.classList.remove('hidden');
+            feedbackArea.classList.add('hidden');
+        }
+
+        // 檢查使用者答案
+        function checkAnswer(userSaysCorrect) {
+            const isActuallyCorrect = currentQuestion.isCorrect;
+            const isAnswerRight = (userSaysCorrect === isActuallyCorrect);
+
+            actionButtons.classList.add('hidden');
+            feedbackArea.classList.remove('hidden');
+
+            if (isAnswerRight) {
+                feedbackArea.className = "w-full flex-col items-center mt-6 p-6 rounded-2xl shadow-inner fade-in bg-emerald-50 border border-emerald-200 flex";
+                feedbackTitle.className = "text-2xl md:text-3xl font-black mb-3 text-emerald-700 tracking-wider";
+                feedbackTitle.innerText = "✅ 回答正確！";
+            } else {
+                feedbackArea.className = "w-full flex-col items-center mt-6 p-6 rounded-2xl shadow-inner fade-in bg-rose-50 border border-rose-200 flex";
+                feedbackTitle.className = "text-2xl md:text-3xl font-black mb-3 text-rose-700 tracking-wider";
+                feedbackTitle.innerText = "❌ 回答錯誤！";
+                // 答錯自動加入下一輪錯題池
+                wrongQuestionsForNextRound.push(currentQuestion);
+            }
+
+            const fullCorrectWord = `${currentQuestion.prefix}${currentQuestion.correctChar}${currentQuestion.suffix}`;
+            const statusText = currentQuestion.isCorrect
+                ? `<span class="text-emerald-700 font-bold">【本身書寫正確】</span>正確寫法即為：<span class="text-xl font-black text-indigo-800 ml-1">${fullCorrectWord}</span>`
+                : `<span class="text-rose-600 font-bold">【當前為錯別字】</span>正確寫法應是：<span class="text-xl font-black text-indigo-800 ml-1">${fullCorrectWord}</span>`;
+            
+            feedbackExplanation.innerHTML = `${statusText}<br><br><span class="text-slate-600 text-base md:text-lg">${currentQuestion.explanation}</span>`;
+        }
+
+        // 進入下一題
+        function nextQuestion() {
+            loadNextQuestion();
+        }
+
+        // 顯示本輪結算與錯題循環提示
+        function showRoundResult() {
+            questionArea.classList.add('hidden');
+            actionButtons.classList.add('hidden');
+            feedbackArea.classList.add('hidden');
+            resultArea.classList.remove('hidden');
+
+            if (wrongQuestionsForNextRound.length === 0) {
+                document.getElementById('result-icon').innerText = "🎉";
+                resultTitle.innerText = "太棒了！完全掌握！";
+                resultTitle.className = "text-3xl md:text-4xl font-black text-emerald-600 mb-4 tracking-wider";
+                resultDesc.innerText = "您已經消滅了 A-F 區全部 114 組四字成語中的所有錯別字，語文基礎非常扎實！";
+                resultBtn.innerText = "重新挑戰全部";
+                resultBtn.onclick = initGame;
+            } else {
+                document.getElementById('result-icon').innerText = "📝";
+                resultTitle.innerText = "本輪特訓結束";
+                resultTitle.className = "text-3xl md:text-4xl font-black text-orange-600 mb-4 tracking-wider";
+                resultDesc.innerHTML = `您還有 <span class="text-3xl font-black text-rose-600 mx-2">${wrongQuestionsForNextRound.length}</span> 道題不夠熟練。<br><br>錯題已自動收錄，讓我們進入下一輪把最後的盲點徹底消滅！`;
+                resultBtn.innerText = "進入錯題複習 ➔";
+                resultBtn.onclick = startNextRound;
+            }
+        }
+
+        // 啟動錯題複習輪次
+        function startNextRound() {
+            startNewRound(wrongQuestionsForNextRound);
+        }
+
+        // 頁面載入後啟動
+        window.onload = initGame;
+    </script>
+</body>
+</html>
